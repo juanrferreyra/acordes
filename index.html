@@ -1,0 +1,861 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Acordes - Generador Multi-Instrumento</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            color: white;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .subtitle {
+            color: rgba(255,255,255,0.9);
+            font-size: 1.1rem;
+        }
+
+        .controls {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        .control-group {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .control-item {
+            flex: 1;
+            min-width: 150px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #555;
+        }
+
+        select, input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+
+        select:focus, input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .chord-sequence {
+            margin-top: 20px;
+        }
+
+        #chordSequence {
+            height: 60px;
+            resize: vertical;
+        }
+
+        .results {
+            display: grid;
+            gap: 25px;
+        }
+
+        .instrument-section {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        .instrument-title {
+            font-size: 1.4rem;
+            color: #667eea;
+            margin-bottom: 20px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .chord-grid {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            justify-content: flex-start;
+        }
+
+        .chord-card {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+            border: 2px solid #e9ecef;
+            transition: all 0.3s ease;
+            min-width: 120px;
+        }
+
+        .chord-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            border-color: #667eea;
+        }
+
+        .chord-name {
+            font-weight: 700;
+            margin-bottom: 10px;
+            color: #495057;
+        }
+
+        .chord-diagram {
+            margin: 0 auto;
+        }
+
+        .fret-info {
+            font-size: 0.8rem;
+            color: #6c757d;
+            margin-top: 8px;
+        }
+
+        .sequence-section {
+            margin-top: 30px;
+        }
+
+        .sequence-chords {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+
+        .sequence-chord {
+            background: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-weight: 600;
+            border: 1px solid #dee2e6;
+        }
+
+        .no-results {
+            text-align: center;
+            color: #6c757d;
+            font-style: italic;
+            padding: 40px;
+        }
+
+        @media (max-width: 768px) {
+            .control-group {
+                flex-direction: column;
+            }
+            
+            .chord-grid {
+                justify-content: center;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎸 Acordes</h1>
+            <p class="subtitle">Generador de acordes para guitarra, charango, ronroco y ukelele</p>
+        </header>
+
+        <div class="controls">
+            <div class="control-group">
+                <div class="control-item">
+                    <label for="noteSelect">Nota:</label>
+                    <select id="noteSelect">
+                        <option value="C">Do (C)</option>
+                        <option value="C#">Do# (C#)</option>
+                        <option value="D">Re (D)</option>
+                        <option value="D#">Re# (D#)</option>
+                        <option value="E">Mi (E)</option>
+                        <option value="F">Fa (F)</option>
+                        <option value="F#">Fa# (F#)</option>
+                        <option value="G">Sol (G)</option>
+                        <option value="G#">Sol# (G#)</option>
+                        <option value="A">La (A)</option>
+                        <option value="A#">La# (A#)</option>
+                        <option value="B">Si (B)</option>
+                    </select>
+                </div>
+                <div class="control-item">
+                    <label for="chordTypeSelect">Tipo de Acorde:</label>
+                    <select id="chordTypeSelect">
+                        <option value="major">Mayor</option>
+                        <option value="minor">Menor (m)</option>
+                        <option value="dom7">Séptima dominante (7)</option>
+                        <option value="maj7">Séptima mayor (maj7)</option>
+                        <option value="min7">Séptima menor (m7)</option>
+                        <option value="sus2">Suspendido 2 (sus2)</option>
+                        <option value="sus4">Suspendido 4 (sus4)</option>
+                        <option value="dim">Disminuido (dim)</option>
+                        <option value="aug">Aumentado (aug)</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="chord-sequence">
+                <label for="chordSequence">Secuencia de Acordes (ej: C G Am F):</label>
+                <input type="text" id="chordSequence" placeholder="Ingresa una secuencia de acordes separados por espacios...">
+            </div>
+        </div>
+
+        <div class="results" id="results">
+            <div class="no-results">
+                Selecciona una nota y tipo de acorde, o ingresa una secuencia para comenzar
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuración de instrumentos con afinaciones
+        const INSTRUMENTS = {
+            guitar: {
+                name: 'Guitarra',
+                icon: '🎸',
+                strings: ['E', 'A', 'D', 'G', 'B', 'E'], // De la 6ta a la 1ra cuerda
+                stringNames: ['6ta', '5ta', '4ta', '3ra', '2da', '1ra']
+            },
+            charango: {
+                name: 'Charango',
+                icon: '🪕',
+                strings: ['G', 'C', 'E', 'A', 'E'], // Afinación estándar
+                stringNames: ['5ta', '4ta', '3ra', '2da', '1ra']
+            },
+            ronroco: {
+                name: 'Ronroco/Maulincho',
+                icon: '🎻',
+                strings: ['D', 'G', 'B', 'E', 'B'], // Similar al charango pero traspuesto
+                stringNames: ['5ta', '4ta', '3ra', '2da', '1ra']
+            },
+            ukulele: {
+                name: 'Ukelele',
+                icon: '🎤',
+                strings: ['G', 'C', 'E', 'A'], // Afinación estándar
+                stringNames: ['4ta', '3ra', '2da', '1ra']
+            }
+        };
+
+        // Notas cromáticas
+        const NOTES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+
+        // Definición de tipos de acordes (intervalos semitonos desde la tónica)
+        const CHORD_TYPES = {
+            major: { name: 'Mayor', intervals: [0, 4, 7], symbol: '' },
+            minor: { name: 'Menor', intervals: [0, 3, 7], symbol: 'm' },
+            dom7: { name: 'Séptima dominante', intervals: [0, 4, 7, 10], symbol: '7' },
+            maj7: { name: 'Séptima mayor', intervals: [0, 4, 7, 11], symbol: 'maj7' },
+            min7: { name: 'Séptima menor', intervals: [0, 3, 7, 10], symbol: 'm7' },
+            sus2: { name: 'Suspendido 2', intervals: [0, 2, 7], symbol: 'sus2' },
+            sus4: { name: 'Suspendido 4', intervals: [0, 5, 7], symbol: 'sus4' },
+            dim: { name: 'Disminuido', intervals: [0, 3, 6], symbol: 'dim' },
+            aug: { name: 'Aumentado', intervals: [0, 4, 8], symbol: 'aug' }
+        };
+
+        // Función para obtener el índice de una nota
+        function getNoteIndex(note) {
+            return NOTES.indexOf(note);
+        }
+
+        // Función para obtener una nota por índice
+        function getNoteByIndex(index) {
+            return NOTES[((index % 12) + 12) % 12];
+        }
+
+        // Función para generar las notas de un acorde
+        function getChordNotes(rootNote, chordType) {
+            const rootIndex = getNoteIndex(rootNote);
+            const intervals = CHORD_TYPES[chordType].intervals;
+            
+            return intervals.map(interval => getNoteByIndex(rootIndex + interval));
+        }
+
+        // DEBUG: versión instrumentada para revisar combinaciones descartadas
+        function generateChordFingerrings(instrument, chordNotes, maxFret = 5) {
+            const strings = INSTRUMENTS[instrument].strings;
+            const fingerings = [];
+            let rejectedByValidation = 0;
+            let rejectedByPlayability = 0;
+            let totalGenerated = 0;
+
+            function generateCombinations(stringIndex, currentFingering, usedNotes) {
+                if (stringIndex >= strings.length) {
+                    totalGenerated++;
+                    if (isValidFingering(currentFingering, chordNotes, instrument)) {
+                        const processedFingering = processFingeringWithBarre(currentFingering, instrument);
+                        if (processedFingering && isPlayableFingering(processedFingering)) {
+                            fingerings.push(processedFingering);
+                        } else {
+                            rejectedByPlayability++;
+                        }
+                    } else {
+                        rejectedByValidation++;
+                    }
+                    return;
+                }
+
+                const stringNote = strings[stringIndex];
+                const stringNoteIndex = getNoteIndex(stringNote);
+
+                // Cuerda al aire
+                const openNote = getNoteByIndex(stringNoteIndex);
+                if (chordNotes.includes(openNote)) {
+                    currentFingering[stringIndex] = 0;
+                    usedNotes.add(openNote);
+                    generateCombinations(stringIndex + 1, currentFingering, usedNotes);
+                    usedNotes.delete(openNote);
+                }
+
+                // Trastes del 1 al maxFret
+                for (let fret = 1; fret <= maxFret; fret++) {
+                    const frettedNote = getNoteByIndex(stringNoteIndex + fret);
+                    if (chordNotes.includes(frettedNote)) {
+                        currentFingering[stringIndex] = fret;
+                        usedNotes.add(frettedNote);
+                        generateCombinations(stringIndex + 1, currentFingering, usedNotes);
+                        usedNotes.delete(frettedNote);
+                    }
+                }
+
+                // Cuerda no tocada
+                currentFingering[stringIndex] = 'x';
+                generateCombinations(stringIndex + 1, currentFingering, usedNotes);
+            }
+
+            generateCombinations(0, new Array(strings.length), new Set());
+
+            console.log("Total combinaciones generadas:", totalGenerated);
+            console.log("Validas:", fingerings.length);
+            console.log("Descartadas por isValidFingering:", rejectedByValidation);
+            console.log("Descartadas por isPlayableFingering:", rejectedByPlayability);
+
+            return fingerings
+                .filter(f => f && f.frets.length > 0)
+                .sort((a, b) => calculateFingeringScore(b, instrument, chordNotes) - calculateFingeringScore(a, instrument, chordNotes))
+                .slice(0, 6);
+        }
+
+		    // Procesa una digitación de acorde y determina si debe tener cejilla según reglas musicales
+		    function processFingeringWithBarre(fingering, instrument) {
+			    if (!fingering) return null; // Control de null explícito
+
+			    const frets = [...fingering];
+
+			    // 1. No puede haber cuerdas al aire (0)
+			    const hasOpen = frets.includes(0);
+			    if (hasOpen) return { frets, barre: null, fingers: assignFingers(frets, null) };
+
+			    // 2. Las "x" deben estar solo a la izquierda (antes de cualquier nota tocada)
+			    let foundNonX = false;
+			    for (let i = 0; i < frets.length; i++) {
+				    if (frets[i] !== 'x') {
+					    foundNonX = true;
+				    } else if (foundNonX) {
+					    return { frets, barre: null, fingers: assignFingers(frets, null) };
+				    }
+			    }
+
+			    // 3. Buscar el traste más bajo usado
+			    const usedFrets = frets.filter(f => typeof f === 'number' && f > 0);
+			    if (usedFrets.length < 2) return { frets, barre: null, fingers: assignFingers(frets, null) };
+
+			    const minFret = Math.min(...usedFrets);
+
+			    // 4. Verificar que haya al menos 2 cuerdas en ese traste (posible cejilla)
+			    const stringsOnMinFret = frets.reduce((arr, f, i) => {
+				    if (f === minFret) arr.push(i);
+				    return arr;
+			    }, []);
+
+			    if (stringsOnMinFret.length < 2) return { frets, barre: null, fingers: assignFingers(frets, null) };
+
+			    // 5. Definir el rango de cuerdas que abarca la cejilla
+			    const barre = {
+				    fret: minFret,
+				    fromString: Math.min(...stringsOnMinFret),
+				    toString: Math.max(...stringsOnMinFret)
+			    };
+
+			    // 6. Asignar dedos y verificar que no se usen más de 3 dedos extra (además del dedo 1 para cejilla)
+			    const fingers = assignFingers(frets, barre);
+			    if (!fingers) return { frets, barre: null, fingers: assignFingers(frets, null) }; // Control null por falta de dedos
+
+			    const fingerCount = new Set(fingers.filter((f, i) => typeof frets[i] === 'number' && frets[i] > minFret && f !== 1)).size;
+
+			    if (fingerCount > 3) return { frets, barre: null, fingers: assignFingers(frets, null) };
+
+			    return { frets, barre, fingers };
+		    }
+
+		    // Asigna dedos a cada traste presionado, teniendo en cuenta la cejilla si existe
+		    function assignFingers(frets, barre) {
+			    const fingers = new Array(frets.length).fill(null);
+			    const usedFingers = new Set();
+
+			    // 1. Asignar dedo 1 a la cejilla
+			    if (barre) {
+				    for (let i = barre.fromString; i <= barre.toString; i++) {
+					    if (frets[i] === barre.fret) {
+						    fingers[i] = 1;
+					    }
+				    }
+				    usedFingers.add(1);
+			    }
+
+			    // 2. Asignar dedos a otros trastes mayores que la cejilla
+			    const availableFingers = [1, 2, 3, 4].filter(f => !usedFingers.has(f));
+			    let fingerIndex = 0;
+
+			    // Ordenar primero por trastes crecientes para priorizar los más cercanos al clavijero
+			    const sorted = frets.map((f, i) => ({ index: i, fret: f }))
+				    .filter(item => typeof item.fret === 'number' && item.fret > 0)
+				    .sort((a, b) => a.fret - b.fret);
+
+			    for (const { index, fret } of sorted) {
+				    if (barre && fret === barre.fret && fingers[index] === 1) continue; // ya asignado por cejilla
+				    if (fingers[index] != null) continue;
+
+				    if (fingerIndex < availableFingers.length) {
+					    fingers[index] = availableFingers[fingerIndex++];
+				    } else {
+					    return null; // no hay dedos disponibles
+				    }
+			    }
+
+			    return fingers;
+		    }
+
+        // Verifica si la digitación es tocable con la mano
+        function isPlayableFingering(fingering) {
+            if (!fingering || !fingering.fingers) return false;
+
+            const { frets, barre, fingers } = fingering;
+
+            // 1. Las cuerdas "x" deben estar solo a la izquierda
+            let foundNonX = false;
+            for (let i = 0; i < frets.length; i++) {
+                if (frets[i] !== 'x') {
+                    foundNonX = true;
+                } else if (foundNonX) {
+                    return false;
+                }
+            }
+
+            // 2. Si hay cejilla, no puede haber cuerdas al aire a su derecha
+            if (barre) {
+                for (let i = 0; i < frets.length; i++) {
+                    if (frets[i] === 0 && i >= barre.fromString) {
+                        return false;
+                    }
+                }
+            }
+
+            // 3. Todos los trastes presionados deben tener dedo asignado
+            for (let i = 0; i < frets.length; i++) {
+                if (typeof frets[i] === 'number' && frets[i] > 0) {
+                    if (!fingers[i]) {
+                        return false;
+                    }
+                }
+            }
+
+            // 4. El rango entre el traste más bajo y el más alto debe ser de máximo 3
+            const numericFrets = frets.filter(f => typeof f === 'number' && f > 0);
+            if (numericFrets.length > 0) {
+                const minFret = Math.min(...numericFrets);
+                const maxFret = Math.max(...numericFrets);
+                if (maxFret - minFret > 3) {
+                    return false;
+                }
+            }
+
+            // 5. Restricción de inversión entre dedos consecutivos
+            const fingerPos = [];
+            for (let i = 0; i < fingers.length; i++) {
+                const f = fingers[i];
+                const fret = frets[i];
+                if (f && typeof fret === 'number' && fret > 0) {
+                    if (!(barre && f === 1 && fret === barre.fret)) {
+                        fingerPos.push({ stringIndex: i, fret, finger: f });
+                    }
+                }
+            }
+            fingerPos.sort((a, b) => a.finger - b.finger);
+
+            for (let i = 1; i < fingerPos.length; i++) {
+                const prev = fingerPos[i - 1];
+                const curr = fingerPos[i];
+                if (curr.finger === prev.finger + 1) {
+                    const stringDist = Math.abs(curr.stringIndex - prev.stringIndex);
+                    const fretDist = Math.abs(curr.fret - prev.fret);
+                    if ((stringDist > 0 && fretDist > 0) && (stringDist + fretDist > 4)) {
+                        return false;
+                    }
+                }
+            }
+
+            // 6. Restricción general entre cualquier par de dedos: evitar saltos extremos
+            for (let i = 0; i < fingerPos.length; i++) {
+                for (let j = i + 1; j < fingerPos.length; j++) {
+                    const stringDist = Math.abs(fingerPos[i].stringIndex - fingerPos[j].stringIndex);
+                    const fretDist = Math.abs(fingerPos[i].fret - fingerPos[j].fret);
+                    if (stringDist > 3 && fretDist > 3) {
+                        return false;
+                    }
+                }
+            }
+
+            return true;
+        }
+
+        function isValidFingering(fingering, chordNotes, instrument) {
+            const requiredNotes = new Set(chordNotes);
+            const foundNotes = new Set();
+
+            for (let i = 0; i < fingering.length; i++) {
+                const fret = fingering[i];
+                if (fret === 'x') continue;
+
+                const stringNote = INSTRUMENTS[instrument].strings[i];
+                const note = getNoteByIndex(getNoteIndex(stringNote) + (typeof fret === 'number' ? fret : 0));
+                foundNotes.add(note);
+            }
+
+            for (const note of foundNotes) {
+                requiredNotes.delete(note);
+            }
+
+            const usedStrings = fingering.filter(f => f !== 'x').length;
+
+            return requiredNotes.size === 0 && usedStrings >= 3;
+        }
+
+        // Función para calcular puntuación de digitación (mayor es mejor)
+        function calculateFingeringScore(fingering, instrument, chordNotes) {
+            let score = 0;
+            const strings = INSTRUMENTS[instrument].strings;
+            const { frets, barre } = fingering;
+            
+            // Puntos por cuerdas usadas
+            const usedStrings = frets.filter(f => f !== 'x').length;
+            score += usedStrings * 10;
+            
+            // Penalizar trastes altos
+            const maxFret = Math.max(...frets.filter(f => typeof f === 'number'));
+            score -= maxFret * 2;
+            
+            // Bonus si empieza con la tónica
+            const firstUsedString = frets.findIndex(f => f !== 'x');
+            const firstUsedStringNote = strings[firstUsedString];
+            const firstUsedFret = frets[firstUsedString];
+            if (typeof firstUsedFret === 'number') {
+                const firstNote = getNoteByIndex(getNoteIndex(firstUsedStringNote) + firstUsedFret);
+                if (firstNote === chordNotes[0]) {
+                    score += 50; // Bonus grande por tónica en el bajo
+                }
+            }
+            
+            // Bonus por cejilla (más fácil de tocar)
+            /*if (barre) {
+                score += 15;
+            }*/
+            
+            // Penalizar digitaciones complejas
+            const usedFingers = new Set(fingering.fingers.filter(f => f !== null));
+            score -= Math.max(0, usedFingers.size - 4) * 10;
+            
+            return score;
+        }
+
+        // Función para crear diagrama SVG del acorde
+        function createChordDiagram(fingering, instrument) {
+            const strings = INSTRUMENTS[instrument].strings;
+            const stringCount = strings.length;
+            const fretCount = 5; // Mostrar 5 trastes (0-4)
+            
+            const width = 100;
+            const height = 140;
+            const stringSpacing = width / (stringCount - 1);
+            const fretSpacing = (height - 40) / fretCount;
+            
+            let svg = `<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">`;
+            
+            // Dibujar cuerdas
+            for (let i = 0; i < stringCount; i++) {
+                const x = i * stringSpacing;
+                svg += `<line x1="${x}" y1="10" x2="${x}" y2="${height - 30}" stroke="#666" stroke-width="1"/>`;
+            }
+            
+            // Dibujar trastes
+            for (let i = 0; i <= fretCount; i++) {
+                const y = 10 + i * fretSpacing;
+                const strokeWidth = i === 0 ? 3 : 1; // Cejilla más gruesa
+                svg += `<line x1="0" y1="${y}" x2="${width}" y2="${y}" stroke="#333" stroke-width="${strokeWidth}"/>`;
+            }
+            
+            const { frets, barre, fingers } = fingering;
+            
+            // Dibujar cejilla si existe
+            if (barre) {
+                const y = 10 + (barre.fret - 0.5) * fretSpacing;
+                const x1 = barre.fromString * stringSpacing;
+                const x2 = barre.toString * stringSpacing;
+                svg += `<line x1="${x1}" y1="${y}" x2="${x2}" y2="${y}" stroke="#000" stroke-width="6" stroke-linecap="round"/>`;
+                svg += `<text x="${(x1 + x2) / 2}" y="${y - 8}" text-anchor="middle" font-size="8" fill="#000">1</text>`;
+            }
+            
+            // Dibujar posiciones de dedos
+            for (let i = 0; i < frets.length; i++) {
+                const x = i * stringSpacing;
+                const fret = frets[i];
+                const finger = fingers[i];
+                
+                if (fret === 'x') {
+                    // Cuerda no tocada
+                    svg += `<text x="${x}" y="8" text-anchor="middle" font-size="12" fill="red">×</text>`;
+                } else if (fret === 0) {
+                    // Cuerda al aire
+                    svg += `<circle cx="${x}" cy="8" r="4" fill="white" stroke="#333" stroke-width="2"/>`;
+                } else if (finger && (!barre || fret !== barre.fret)) {
+                    // Cuerda presionada (no cejilla)
+                    const y = 10 + (fret - 0.5) * fretSpacing;
+                    svg += `<circle cx="${x}" cy="${y}" r="6" fill="#667eea"/>`;
+                    svg += `<text x="${x}" y="${y + 1}" text-anchor="middle" font-size="8" fill="white">${finger}</text>`;
+                }
+            }
+            
+            // Mostrar notas debajo del diagrama
+            const noteY = height - 15;
+            for (let i = 0; i < frets.length; i++) {
+                const x = i * stringSpacing;
+                const fret = frets[i];
+                
+                if (fret !== 'x') {
+                    const stringNote = strings[i];
+                    const stringNoteIndex = getNoteIndex(stringNote);
+                    const resultNote = getNoteByIndex(stringNoteIndex + (typeof fret === 'number' ? fret : 0));
+                    svg += `<text x="${x}" y="${noteY}" text-anchor="middle" font-size="10" fill="#333">${resultNote}</text>`;
+                }
+            }
+            
+            svg += '</svg>';
+            return svg;
+        }
+
+        // Función para generar acordes individuales
+        function generateSingleChord() {
+            const note = document.getElementById('noteSelect').value;
+            const chordType = document.getElementById('chordTypeSelect').value;
+            const chordNotes = getChordNotes(note, chordType);
+            const chordSymbol = note + CHORD_TYPES[chordType].symbol;
+
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '';
+
+            Object.keys(INSTRUMENTS).forEach(instrumentKey => {
+                const instrument = INSTRUMENTS[instrumentKey];
+                const fingerings = generateChordFingerrings(instrumentKey, chordNotes);
+
+                const section = document.createElement('div');
+                section.className = 'instrument-section';
+                
+                section.innerHTML = `
+                    <h3 class="instrument-title">
+                        <span>${instrument.icon}</span>
+                        ${instrument.name} - ${chordSymbol}
+                    </h3>
+                    <div class="chord-grid">
+                        ${fingerings.map((fingering, index) => `
+                            <div class="chord-card">
+                                <div class="chord-name">Opción ${index + 1}</div>
+                                <div class="chord-diagram">
+                                    ${createChordDiagram(fingering, instrumentKey)}
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+                
+                resultsDiv.appendChild(section);
+            });
+        }
+
+        // Función para generar secuencia de acordes
+        function generateChordSequence() {
+            const sequence = document.getElementById('chordSequence').value.trim();
+            if (!sequence) {
+                generateSingleChord();
+                return;
+            }
+
+            const chords = parseChordSequence(sequence);
+            if (chords.length === 0) {
+                document.getElementById('results').innerHTML = '<div class="no-results">No se pudieron interpretar los acordes de la secuencia</div>';
+                return;
+            }
+
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = `
+                <div class="sequence-section">
+                    <h3>Secuencia: ${sequence}</h3>
+                    <div class="sequence-chords">
+                        ${chords.map(chord => `<span class="sequence-chord">${chord.symbol}</span>`).join('')}
+                    </div>
+                </div>
+            `;
+
+            Object.keys(INSTRUMENTS).forEach(instrumentKey => {
+                const instrument = INSTRUMENTS[instrumentKey];
+                const section = document.createElement('div');
+                section.className = 'instrument-section';
+                
+                const chordDiagrams = chords.map(chord => {
+                    const fingerings = generateChordFingerrings(instrumentKey, chord.notes);
+                    const bestFingering = fingerings[0] || null;
+                    
+                    return `
+                        <div class="chord-card">
+                            <div class="chord-name">${chord.symbol}</div>
+                            <div class="chord-diagram">
+                                ${bestFingering ? createChordDiagram(bestFingering, instrumentKey) : '<div style="height:140px;display:flex;align-items:center;justify-content:center;color:#999;">N/A</div>'}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+                section.innerHTML = `
+                    <h3 class="instrument-title">
+                        <span>${instrument.icon}</span>
+                        ${instrument.name}
+                    </h3>
+                    <div class="chord-grid">
+                        ${chordDiagrams}
+                    </div>
+                `;
+                
+                resultsDiv.appendChild(section);
+            });
+        }
+
+        // Función para parsear secuencia de acordes
+        function parseChordSequence(sequence) {
+            const chordStrings = sequence.split(/\s+/).filter(s => s.length > 0);
+            const chords = [];
+
+            chordStrings.forEach(chordStr => {
+                const parsed = parseChord(chordStr);
+                if (parsed) {
+                    chords.push(parsed);
+                }
+            });
+
+            return chords;
+        }
+
+        // Función para parsear un acorde individual
+        function parseChord(chordStr) {
+            // Expresión regular para parsear acordes
+            const chordRegex = /^([A-G][#b]?)(m|maj7|m7|7|sus2|sus4|dim|aug)?$/i;
+            const match = chordStr.match(chordRegex);
+            
+            if (!match) return null;
+
+            let rootNote = match[1].toUpperCase();
+            let chordType = (match[2] || '').toLowerCase();
+
+            // Convertir bemoles a sostenidos
+            if (rootNote.includes('b')) {
+                const noteMap = {'Db': 'C#', 'Eb': 'D#', 'Gb': 'F#', 'Ab': 'G#', 'Bb': 'A#'};
+                rootNote = noteMap[rootNote] || rootNote;
+            }
+
+            // Mapear tipos de acordes
+            const typeMap = {
+                '': 'major',
+                'm': 'minor',
+                '7': 'dom7',
+                'maj7': 'maj7',
+                'm7': 'min7',
+                'sus2': 'sus2',
+                'sus4': 'sus4',
+                'dim': 'dim',
+                'aug': 'aug'
+            };
+
+            chordType = typeMap[chordType] || 'major';
+
+            const notes = getChordNotes(rootNote, chordType);
+            const symbol = rootNote + CHORD_TYPES[chordType].symbol;
+
+            return {
+                root: rootNote,
+                type: chordType,
+                notes: notes,
+                symbol: symbol
+            };
+        }
+
+        // Event listeners
+        document.getElementById('noteSelect').addEventListener('change', () => {
+            if (!document.getElementById('chordSequence').value.trim()) {
+                generateSingleChord();
+            }
+        });
+
+        document.getElementById('chordTypeSelect').addEventListener('change', () => {
+            if (!document.getElementById('chordSequence').value.trim()) {
+                generateSingleChord();
+            }
+        });
+
+        document.getElementById('chordSequence').addEventListener('input', generateChordSequence);
+
+        // Generar acorde inicial
+        generateSingleChord();
+    </script>
+</body>
+</html>
