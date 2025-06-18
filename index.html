@@ -82,8 +82,22 @@
             border-color: #667eea;
         }
 
+        summary {
+            font-weight: 600;
+            color: #555;
+            cursor: pointer;
+        }
+        
+        .reset-tuning-btn {
+            font-weight: 600;
+            color: #555;
+            font-size: 16px;
+            margin-bottom: 20px;
+        }
+        
         .chord-sequence {
             margin-top: 20px;
+            margin-bottom: 20px;
         }
 
         #chordSequence {
@@ -101,6 +115,10 @@
             border-radius: 15px;
             padding: 25px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        .instrument-section details summary {
+            margin-bottom: 20px;
         }
 
         .instrument-title {
@@ -146,10 +164,10 @@
             margin: 0 auto;
         }
 
-	.chord-diagram svg {
+        .chord-diagram svg {
           overflow: visible;
         }
-	
+
         .fret-info {
             font-size: 0.8rem;
             color: #6c757d;
@@ -246,6 +264,16 @@
                 <label for="chordSequence">Secuencia de Acordes (ej: C G Am F):</label>
                 <input type="text" id="chordSequence" placeholder="Ingresa una secuencia de acordes separados por espacios...">
             </div>
+
+            <details id="instrumentOptions">
+              <summary>Instrumentos visibles 🎚️</summary>
+              <div style="margin-top: 10px; display: flex; flex-wrap: wrap; gap: 10px;">
+                <label><input type="checkbox" checked data-instrument="guitar"> Guitarra</label>
+                <label><input type="checkbox" checked data-instrument="charango"> Charango</label>
+                <label><input type="checkbox" checked data-instrument="ronroco"> Ronroco</label>
+                <label><input type="checkbox" checked data-instrument="ukulele"> Ukelele</label>
+              </div>
+            </details>
         </div>
 
         <div class="results" id="results">
@@ -283,6 +311,8 @@
                 stringNames: ['4ta', '3ra', '2da', '1ra']
             }
         };
+
+        const ORIGINAL_TUNINGS = JSON.parse(JSON.stringify(INSTRUMENTS));
 
         // Notas cromáticas
         const NOTES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
@@ -700,9 +730,31 @@
             const resultsDiv = document.getElementById('results');
             resultsDiv.innerHTML = '';
 
-            Object.keys(INSTRUMENTS).forEach(instrumentKey => {
+            const activeInstrumentKeys = Array.from(document.querySelectorAll('#instrumentOptions input[type="checkbox"]:checked'))
+              .map(cb => cb.getAttribute('data-instrument'));
+
+            activeInstrumentKeys.forEach(instrumentKey => {
+            /* Object.keys(INSTRUMENTS).forEach(instrumentKey => { */
                 const instrument = INSTRUMENTS[instrumentKey];
                 const fingerings = generateChordFingerrings(instrumentKey, chordNotes);
+
+                const tuningOptions = instrument.strings.map((note, i) => {
+                  const select = `<select class="tuning-select" data-instrument="${instrumentKey}" data-string="${i}">
+                    ${NOTES.map(n => `<option value="${n}"${n === note ? ' selected' : ''}>${n}</option>`).join('')}
+                  </select>`;
+                  return `<div class='control-item'><label>${instrument.stringNames[i]}:</label> ${select}</div>`;
+                }).join('');
+                const tuningOptionsGroup = `<div class='control-group'>${tuningOptions}</div>`;
+
+                const tuningPanel = `
+                  <details>
+                    <summary>Afinación personalizada</summary>
+                    <div>
+                      ${tuningOptionsGroup}
+                      <button type="button" class="reset-tuning-btn" data-instrument="${instrumentKey}">🔄 Restaurar afinación estándar</button>
+                    </div>
+                  </details>
+                `;
 
                 const section = document.createElement('div');
                 section.className = 'instrument-section';
@@ -712,6 +764,7 @@
                         <span>${instrument.icon}</span>
                         ${instrument.name} - ${chordSymbol}
                     </h3>
+                    ${tuningPanel}
                     <div class="chord-grid">
                         ${fingerings.map((fingering, index) => `
                             <div class="chord-card">
@@ -752,7 +805,11 @@
                 </div>
             `;
 
-            Object.keys(INSTRUMENTS).forEach(instrumentKey => {
+            const activeInstrumentKeys = Array.from(document.querySelectorAll('#instrumentOptions input[type="checkbox"]:checked'))
+              .map(cb => cb.getAttribute('data-instrument'));
+
+            activeInstrumentKeys.forEach(instrumentKey => {
+            /* Object.keys(INSTRUMENTS).forEach(instrumentKey => { */
                 const instrument = INSTRUMENTS[instrumentKey];
                 const section = document.createElement('div');
                 section.className = 'instrument-section';
@@ -843,6 +900,15 @@
             };
         }
 
+        function refresh() {
+            const sequence = document.getElementById('chordSequence').value.trim();
+            if (sequence) {
+              generateChordSequence();
+            } else {
+              generateSingleChord();
+            }
+        }
+
         // Event listeners
         document.getElementById('noteSelect').addEventListener('change', () => {
             if (!document.getElementById('chordSequence').value.trim()) {
@@ -857,6 +923,45 @@
         });
 
         document.getElementById('chordSequence').addEventListener('input', generateChordSequence);
+
+        // Para que refresque al seleccionar/deseleccionar un instrumento
+        document.querySelectorAll('#instrumentOptions input[type="checkbox"]').forEach(cb => {
+          cb.addEventListener('change', () => {
+            refresh();
+          });
+        });
+
+        // Para que refresque al cambiar la afinación estándar de alguna cuerda
+        document.addEventListener('change', (e) => {
+          if (e.target.classList.contains('tuning-select')) {
+            const instrument = e.target.getAttribute('data-instrument');
+            const stringIndex = parseInt(e.target.getAttribute('data-string'), 10);
+            const newNote = e.target.value;
+            INSTRUMENTS[instrument].strings[stringIndex] = newNote;
+
+            refresh();
+          }
+        });
+
+        // Para que restaure las afinaciones estándar de las cuerdas y refresque
+        document.addEventListener('click', (e) => {
+          if (e.target.classList.contains('reset-tuning-btn')) {
+            const instrument = e.target.getAttribute('data-instrument');
+            const defaultTuning = ORIGINAL_TUNINGS[instrument].strings;
+
+            // Restaurar la afinación en el objeto principal
+            INSTRUMENTS[instrument].strings = [...defaultTuning];
+
+            // Actualizar los selects en pantalla
+            document.querySelectorAll(`.tuning-select[data-instrument="${instrument}"]`)
+              .forEach(select => {
+                const stringIndex = parseInt(select.getAttribute('data-string'), 10);
+                select.value = defaultTuning[stringIndex];
+              });
+
+            refresh();
+          }
+        });
 
         // Generar acorde inicial
         generateSingleChord();
