@@ -131,6 +131,15 @@
             gap: 10px;
         }
 
+        select.tuning-select.modified {
+          background-color: #fff3cd; /* amarillo suave */
+          border-color: #ffc107;
+        }
+        .instrument-section details.modified summary::after {
+          content: " ⚠️";
+          color: #ffc107;
+        }
+
         .chord-grid {
             display: flex;
             gap: 15px;
@@ -734,7 +743,6 @@
               .map(cb => cb.getAttribute('data-instrument'));
 
             activeInstrumentKeys.forEach(instrumentKey => {
-            /* Object.keys(INSTRUMENTS).forEach(instrumentKey => { */
                 const instrument = INSTRUMENTS[instrumentKey];
                 const fingerings = generateChordFingerrings(instrumentKey, chordNotes);
 
@@ -779,6 +787,7 @@
                 
                 resultsDiv.appendChild(section);
             });
+            markModifiedTunings();
         }
 
         // Función para generar secuencia de acordes
@@ -809,7 +818,6 @@
               .map(cb => cb.getAttribute('data-instrument'));
 
             activeInstrumentKeys.forEach(instrumentKey => {
-            /* Object.keys(INSTRUMENTS).forEach(instrumentKey => { */
                 const instrument = INSTRUMENTS[instrumentKey];
                 const section = document.createElement('div');
                 section.className = 'instrument-section';
@@ -840,6 +848,7 @@
                 
                 resultsDiv.appendChild(section);
             });
+            markModifiedTunings();
         }
 
         // Función para parsear secuencia de acordes
@@ -909,6 +918,65 @@
             }
         }
 
+        function markModifiedTunings() {
+          Object.keys(INSTRUMENTS).forEach(instrument => {
+            const current = INSTRUMENTS[instrument].strings;
+            const original = ORIGINAL_TUNINGS[instrument].strings;
+
+            let modified = false;
+
+            current.forEach((note, i) => {
+              const sel = document.querySelector(`.tuning-select[data-instrument="${instrument}"][data-string="${i}"]`);
+              if (!sel) return;
+
+              const isChanged = note !== original[i];
+              sel.classList.toggle('modified', isChanged);
+              if (isChanged) modified = true;
+            });
+
+            const details = document.querySelector(`.instrument-section .reset-tuning-btn[data-instrument="${instrument}"]`)
+                              ?.closest('.instrument-section')
+                              ?.querySelector('details');
+            if (details) {
+              details.classList.toggle('modified', modified);
+            }
+          });
+        }
+
+        function preserveInteractionAndRefresh() {
+          const active = document.activeElement;
+          const activeId = active?.id || null;
+          const activeData = active?.getAttribute('data-instrument') || null;
+          const activeType = active?.classList?.contains('tuning-select') ? 'select'
+                             : active?.classList?.contains('reset-tuning-btn') ? 'button'
+                             : null;
+
+          const openDetails = Array.from(document.querySelectorAll('.instrument-section details'))
+            .filter(d => d.open)
+            .map(d => d.closest('.instrument-section')?.querySelector('.reset-tuning-btn')?.getAttribute('data-instrument'));
+
+          refresh();
+
+          // Restaurar después de renderizado
+          setTimeout(() => {
+            // Reabrir <details>
+            openDetails.forEach(instrument => {
+              const section = document.querySelector(`.instrument-section .reset-tuning-btn[data-instrument="${instrument}"]`)?.closest('.instrument-section');
+              section?.querySelector('details')?.setAttribute('open', '');
+            });
+
+            // Restaurar foco
+            if (activeType === 'select') {
+              const el = document.querySelector(`.tuning-select[data-instrument="${activeData}"][data-string="${active.getAttribute('data-string')}"]`);
+              el?.focus();
+            } else if (activeType === 'button') {
+              const el = document.querySelector(`.reset-tuning-btn[data-instrument="${activeData}"]`);
+              el?.focus();
+            }
+            markModifiedTunings();
+          }, 10);
+        }
+
         // Event listeners
         document.getElementById('noteSelect').addEventListener('change', () => {
             if (!document.getElementById('chordSequence').value.trim()) {
@@ -939,7 +1007,7 @@
             const newNote = e.target.value;
             INSTRUMENTS[instrument].strings[stringIndex] = newNote;
 
-            refresh();
+            preserveInteractionAndRefresh();
           }
         });
 
@@ -959,7 +1027,7 @@
                 select.value = defaultTuning[stringIndex];
               });
 
-            refresh();
+            preserveInteractionAndRefresh();
           }
         });
 
